@@ -21,5 +21,10 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('login_action/', views.login_action),
     path('project/', include('sign.urls')),
-    path('accounts/login/', views.login_action)
+    path('accounts/login/', views.login_action),
+    path('logout/', views.logout_action),
+
+    # 接口地址
+    path('api/', include(('sign.urls', 'sign'),namespace='sign'))
+
 ]
