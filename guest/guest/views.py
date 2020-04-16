@@ -1,4 +1,4 @@
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render, redirect
 from django.contrib import auth
 from django.contrib.auth.decorators import login_required
@@ -16,8 +16,8 @@ def login_action(request):
         if user is not None:
             print('-----------------user is not none--------------------')
             auth.login(request,user)
-            response =  redirect('/project/event_manage/')
-            return response
+            # response =  redirect('/project/event_manage/')
+            return JsonResponse({"status":200, "message": "login success" })
         else:
             error = 'username or password error'
             return render(request,'index.html',{'error':error})
@@ -26,5 +26,5 @@ def login_action(request):
 @login_required
 def logout_action(request):
     auth.logout(request)
-    response =  redirect('/login_action/')
+    response =  redirect('/accounts/login/')
     return response

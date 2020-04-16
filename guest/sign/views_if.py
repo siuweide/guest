@@ -1,5 +1,6 @@
 import time
 
+from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from django.db import IntegrityError
 from django.views.decorators.csrf import csrf_exempt
@@ -42,10 +43,12 @@ def add_event(request):
 
 
 # 查询发布会接口
-def get_event_list(request):
+@login_required
+def get_event(request):
     eid = request.GET.get('eid', '')
     name = request.GET.get('name', '')
-
+    print('eid----------->', eid)
+    print('name----------->', name)
     if eid == '' and name == '':
         return JsonResponse({'status':10021, 'message':'parameter error'})
 
@@ -80,6 +83,7 @@ def get_event_list(request):
             return JsonResponse({'status':10022, 'message':'query result is empty'})
 
 # 添加嘉宾接口
+@login_required
 def add_guest(request):
     eid = request.POST.get('eid', '')
     realname = request.POST.get('realname', '')
@@ -89,7 +93,7 @@ def add_guest(request):
     if eid == '' or realname == '' or phone == '':
         return JsonResponse({'status':10021, 'message':'parameter error'})
 
-    result = Event.objetcs.filter(id=eid)
+    result = Event.objects.filter(id=eid)
     if not result:
         return JsonResponse({'status':10022, 'message':'event id is null'})
 
@@ -119,7 +123,8 @@ def add_guest(request):
     return JsonResponse({'status':200,'message':'add guest success'})
 
 # 嘉宾查询接口
-def get_guest_list(request):
+@login_required
+def get_guest(request):
     eid = request.GET.get("eid", "")       # 关联发布会id
     phone = request.GET.get("phone", "")   # 嘉宾手机号
 
@@ -154,8 +159,8 @@ def get_guest_list(request):
             guest['sign'] = result.sign
             return JsonResponse({'status':200, 'message':'success', 'data':guest})
 
-
 # 用户签到接口
+@login_required
 def user_sign(request):
     eid =  request.POST.get('eid','')       # 发布会id
     phone =  request.POST.get('phone','')   # 嘉宾手机号
@@ -196,3 +201,41 @@ def user_sign(request):
     else:
         Guest.objects.filter(phone=phone).update(sign='1')
         return JsonResponse({'status':200,'message':'sign success'})
+
+@login_required
+def get_event_list(request):
+    data = []
+    if request.method == "GET":
+        event_list = Event.objects.all()
+        for event in event_list:
+            events = {}
+            events['id'] = event.id
+            events['name'] = event.name
+            events['limit'] = event.limit
+            data.append(events)
+        return JsonResponse({'status':200, 'message':'success', 'data':data})
+    else:
+        return JsonResponse({'status':10201, 'message':'request method error'})
+
+@login_required
+def cancel_event(request):
+    if request.method == "POST":
+        event_id = int(request.POST.get('event_id', ''))
+
+        if event_id == '':
+            return JsonResponse({'status': 10201, 'message': 'event_id is not null'})
+
+        event_ids = []
+        obj_event = Event.objects.all()
+        for name in obj_event:
+            event_ids.append(name.id)
+        if event_id not in event_ids:
+            return JsonResponse({'status': 10202, 'message': 'event_id is not exists'})
+
+        event = Event.objects.get(id=event_id)
+        event.delete()
+        return JsonResponse({'status': 200, 'message': 'success'})
+
+    else:
+        return JsonResponse({'status':10203, 'message':'request method error'})
+
